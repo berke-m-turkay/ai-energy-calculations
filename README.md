@@ -124,7 +124,7 @@ Matplotlib
 
 If using this codebase for academic or policy work, please cite:
 
-"AI’s Energy Challenge: Racing Towards Machine Intelligence or Climate Crisis?" (2024)
+"AI’s Energy Challenge: Racing Towards Machine Intelligence or Climate Crisis?" (2025)
 
 
 
