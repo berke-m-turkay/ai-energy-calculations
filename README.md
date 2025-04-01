@@ -1,6 +1,6 @@
 # ai-energy-carbon-calculations
 
-This repository models and projects the energy consumption, computational demand, user adoption, and environmental impact of Artificial Intelligence systems from 2024 to 2050. It integrates a suite of empirically grounded submodels based on historical trends and Monte Carlo simulation techniques.
+This repository models and projects the energy consumption, computational demand, user adoption, and environmental impact of Artificial Intelligence systems from 2024 to 2050. It integrates a set of empirically grounded submodels based on historical trends and Monte Carlo simulation techniques.
 
 
 
@@ -132,4 +132,4 @@ If using this codebase for academic or policy work, please cite:
 
 MIT License — open for use, distribution, and adaptation with attribution.
 
-For questions or collaborations, contact the project maintainer: Berke Türkay (berke_turkay@alumni.brown.edu)
+For questions, contact Berke Türkay (berke_turkay@alumni.brown.edu)
