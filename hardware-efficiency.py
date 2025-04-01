@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 
 # --- Data Section ---
 # Historical data points for hardware efficiency (in TFLOPs/Watt).
-# Source: Supplementary Section A.1 of the paper.
+# Source: Supplementary Section 2.1 of the paper.
 # Years correspond to key hardware releases; efficiency values reflect FLOPs per energy used.
 years = np.array([2012, 2017, 2020])
 flopw = np.array([0.42, 0.78, 1.4])
