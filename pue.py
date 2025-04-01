@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 # --- Data Section ---
 # This dataset tracks improvements in Power Usage Effectiveness (PUE) from 2007 to 2022.
 # PUE measures how efficiently a data center uses energy; lower values are better.
-# Source: Supplementary Section A.2 of the paper.
+# Source: Supplementary Section 2.3 of the paper.
 years = np.array([2007, 2008, 2009, 2010, 2011, 2013, 2016, 2018, 2020, 2022])
 pue = np.array([2.5, 2.4, 2.2, 2.0, 1.8, 1.6, 1.5, 1.6, 1.6, 1.5])
 
