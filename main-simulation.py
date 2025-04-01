@@ -1,101 +1,99 @@
+# AI Energy Simulation Model (2024–2050)
+# This code integrates all subcomponents to forecast global AI energy usage, emissions, and user impact.
+
 import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
-# Time span and setup
+# ------------------- Initialization -------------------
+
+# Time horizon: years from 2024 to 2050
 time_span = 2050 - 2024
 t = np.linspace(0, time_span, 500)
 years = 2024 + t
 
-# Constants for PUE
+# --- PUE Parameters (from PUE script) ---
 E_p0 = 1 / 1.5
 alpha_p = 0.157
 beta_p = 0.275
 
-# Hardware efficiency
+# --- Hardware Efficiency Parameters (from hardware efficiency script) ---
 E_h0 = 1.8084e12
 alpha_h = 0.6008
 beta_h = 0.3945
 
-# Algorithm efficiency
+# --- Algorithm Efficiency (from algorithm efficiency script) ---
 E_a0 = 1 / ((10000 - 173) / 10000)
 alpha_a = -0.0194
 beta_a = 0.0709
 
-# Computational complexity and model demand
-C_c0 = 272846e18
-eta_c1 = 1.5075
+# --- Model Complexity and Demand (from model complexity and model demand scripts) ---
+C_c0 = 272846e18  # base FLOPs per model
+eta_c1 = 1.5075   # growth exponent
 lambda_c1 = 0.022
-C_m0 = 58.8968
+
+C_m0 = 58.8968    # base model count per year
 eta_m = 1.3189
 lambda_m = 0.3670
 
-# Population and queries
+# --- Query Complexity (from query complexity script) ---
+C_q0 = 251.2e14
+eta_q = 1.7124
+lambda_q = 0.5383
+
+# --- Population & Growth Rates (from population growth script) ---
 P0_A, pop_growth_A = 9.440795e+08, 5.796385e-03
 P0_B, pop_growth_B = 2.150507e+09, 4.823640e-03
 P0_C, pop_growth_C = 1.328686e+09, 1.279255e-02
 P0_D, pop_growth_D = 2.371931e+09, 1.514939e-02
 P0_E, pop_growth_E = 8.911701e+08, 2.524729e-02
 
-# Query Comp
-C_q0 = 251.2e14
-eta_q = 1.7124
-lambda_q = 0.5383
-
-
-# Q_A0, chi_A = 130.9, 0.2318
-# Q_B0, chi_B = 71.70, 0.2743
-# Q_C0, chi_C = 35.80, 0.3356
-# Q_D0, chi_D = 24.50, 0.3422
-# Q_E0, chi_E = 9.819, 0.2713
-
-# conv = 1000000*8/32*3600*24*365.25
-
-# Adoption rates
-A_A0 = 0.17
-A_B0 = 0.13
-A_C0 = 0.07
-A_D0 = 0.04
-A_E0 = 0.02
+# --- Adoption Parameters (see Supplementary Section 3.3.3) ---
+A_A0, A_B0, A_C0, A_D0, A_E0 = 0.17, 0.13, 0.07, 0.04, 0.02
 
 At20, At80 = 5, 15
 gamma_A = 2 * math.log(4) / (At20 - At80)
 t_0A = (At20 + At80) / 2
+
 Bt20, Bt80 = 8, 21
 gamma_B = 2 * math.log(4) / (Bt20 - Bt80)
 t_0B = (Bt20 + Bt80) / 2
+
 Ct10, Ct40 = 6, 19
 gamma_C = -math.log(6) / (Ct40 - Ct10)
 t_0C = Ct10 + (Ct40 - Ct10) * math.log(9) / math.log(6)
+
 Dt10, Dt40 = 9, 20
 gamma_D = -math.log(6) / (Dt40 - Dt10)
 t_0D = Dt10 + (Dt40 - Dt10) * math.log(9) / math.log(6)
+
 Et5, Et20 = 13, 36
 gamma_E = -math.log(6) / (Et20 - Et5)
 t_0E = Et5 + (Et20 - Et5) * math.log(9) / math.log(6)
 
-# Global energy consumption
-initial_global_energy = 29188
+# --- Global Energy Growth (from global power generation script) ---
+initial_global_energy = 29188  # TWh in 2022
 g_e = 0.0286
 
-# Stochastic simulation setup
+# ------------------- Simulation Parameters -------------------
 n_simulations = 1000
 n_years = len(t)
 
-# Scenario adjustments
+# Scenarios: baseline, fewer larger models, more smaller models
 scenario_multipliers = {
-    "baseline": (1, 1),         # Scenario 1: Baseline
-    "fewer_larger": (1.2, 0.6),  # Scenario 2: Fewer, larger models
-    "more_smaller": (0.8, 1.35)   # Scenario 3: More, smaller models
+    "baseline": (1, 1),
+    "fewer_larger": (1.2, 0.6),
+    "more_smaller": (0.8, 1.35)
 }
 
-# Initialize dictionaries for storing results
 scenario_results = {scenario: {} for scenario in scenario_multipliers}
 
+# ------------------- Monte Carlo Simulations -------------------
+
 for scenario, (complexity_multiplier, model_demand_multiplier) in scenario_multipliers.items():
-    # Initialize scenario-specific simulation arrays
+    # Arrays to hold results per simulation
     C_c_scenario = np.zeros((n_simulations, n_years))
     C_m_scenario = np.zeros((n_simulations, n_years))
     C_t_scenario = np.zeros((n_simulations, n_years))
@@ -103,54 +101,45 @@ for scenario, (complexity_multiplier, model_demand_multiplier) in scenario_multi
     P_tt_scenario = np.zeros((n_simulations, n_years))
     P_ut_scenario = np.zeros((n_simulations, n_years))
 
-
     for i in range(n_simulations):
-        # Adjusted complexity and model parameters for the scenario
+        # Sample stochastic parameters from normal distributions
         eta_c1_sim = np.random.normal(eta_c1 * complexity_multiplier, 0.03)
         lambda_c1_sim = np.random.normal(lambda_c1, 0.02)
         eta_m_sim = np.random.normal(eta_m * model_demand_multiplier, 0.03)
         lambda_m_sim = np.random.normal(lambda_m, 0.02)
 
-        # Efficiency
+        # --- Efficiency curves ---
         E_p_sim = E_p0 * np.exp((alpha_p / beta_p) * (1 - np.exp(-beta_p * t)))
         E_h_sim = E_h0 * np.exp((alpha_h / beta_h) * (1 - np.exp(-beta_h * t)))
         E_a_sim = E_a0 * np.exp((alpha_a / beta_a) * (1 - np.exp(-beta_a * t)))
 
-        # Computational complexity and model demand
+        # --- Computation ---
         C_c = C_c0 * (np.maximum(t + 2 + lambda_c1_sim, 1e-6)) ** eta_c1_sim
         C_m = C_m0 * (np.maximum(t + 2 + lambda_m_sim, 1e-6)) ** eta_m_sim
         C_q = C_q0 * (np.maximum(t + 2 + lambda_q, 1e-6)) ** eta_q
 
-        # Population
+        # --- Population ---
         P_A = P0_A * np.exp(pop_growth_A * t)
         P_B = P0_B * np.exp(pop_growth_B * t)
         P_C = P0_C * np.exp(pop_growth_C * t)
         P_D = P0_D * np.exp(pop_growth_D * t)
         P_E = P0_E * np.exp(pop_growth_E * t)
 
-        # Adoption rates
+        # --- AI Adoption ---
         A_A = A_A0 + (1 - A_A0) / (1 + np.exp(gamma_A * (t - t_0A)))
         A_B = A_B0 + (1 - A_B0) / (1 + np.exp(gamma_B * (t - t_0B)))
         A_C = A_C0 + (1 - A_C0) / (1 + np.exp(gamma_C * (t - t_0C)))
         A_D = A_D0 + (1 - A_D0) / (1 + np.exp(gamma_D * (t - t_0D)))
         A_E = A_E0 + (1 - A_E0) / (1 + np.exp(gamma_E * (t - t_0E)))
 
-        # Total usage demand
-
-        C_u = (
-            P_A * A_A +
-            P_B * A_B +
-            P_C * A_C +
-            P_D * A_D +
-            P_E * A_E
-        )
+        # --- Compute demand and energy usage ---
+        C_u = P_A * A_A + P_B * A_B + P_C * A_C + P_D * A_D + P_E * A_E
         C_t = C_c * C_m + C_u * C_q
-        P_t = (C_t / (E_p_sim * E_h_sim / (E_a_sim))) / 1e12
+        P_t = (C_t / (E_p_sim * E_h_sim / E_a_sim)) / 1e12  # TWh
+        P_tt = (C_c * C_m / (E_p_sim * E_h_sim / E_a_sim)) / 1e12
+        P_ut = (C_u * C_q / (E_p_sim * E_h_sim / E_a_sim)) / 1e12
 
-        P_tt = (C_c * C_m / (E_p_sim * E_h_sim / (E_a_sim))) / 1e12
-        P_ut = (C_u * C_q / (E_p_sim * E_h_sim / (E_a_sim))) / 1e12
-
-        # Store scenario-specific results
+        # Store results
         C_c_scenario[i] = C_c
         C_m_scenario[i] = C_m
         C_t_scenario[i] = C_t
@@ -158,7 +147,7 @@ for scenario, (complexity_multiplier, model_demand_multiplier) in scenario_multi
         P_tt_scenario[i] = P_tt
         P_ut_scenario[i] = P_ut
 
-    # Compute medians and percentiles
+    # --- Scenario summary statistics ---
     scenario_results[scenario]["C_c"] = np.percentile(C_c_scenario, [50, 5, 95], axis=0)
     scenario_results[scenario]["C_m"] = np.percentile(C_m_scenario, [50, 5, 95], axis=0)
     scenario_results[scenario]["C_t"] = np.percentile(C_t_scenario, [50, 5, 95], axis=0)
@@ -357,8 +346,6 @@ plt.xticks(np.arange(2024, 2024+time_span, 2))
 plt.tight_layout()
 plt.show()
 
-
-
 # Extract yearly total energy demand for all scenarios
 energy_demand_data = {"Year": np.arange(2024, 2051)}
 training_demand_data = {"Year": np.arange(2024, 2051)}
@@ -472,35 +459,3 @@ cumulative_ppm_df.to_csv("gpu_cumulative_co2_ppm.csv", index=False)
 
 # Plot both graphs in a single figure
 fig, axs = plt.subplots(2, 1, figsize=(7, 10))
-
-# Plot 1: Annual CO2 change (ppm)
-for scenario in co2_ppm_change.keys():
-    if scenario != "Year":
-        axs[0].plot(
-            co2_ppm_df["Year"], 
-            co2_ppm_df[scenario],
-            label=f'{scenario}'
-        )
-axs[0].set_title("Annual Increase in Atmospheric CO2 Due to GPU Emissions (ppm)")
-axs[0].set_xlabel("Year")
-axs[0].set_ylabel("CO2 Increase (ppm/year)")
-axs[0].legend()
-axs[0].grid()
-
-# Plot 2: Cumulative CO2 change (ppm)
-for scenario in cumulative_co2_ppm.keys():
-    if scenario != "Year":
-        axs[1].plot(
-            cumulative_ppm_df["Year"], 
-            cumulative_ppm_df[scenario],
-            label=f'{scenario}'
-        )
-axs[1].set_title("Cumulative Increase in Atmospheric CO2 Due to GPU Emissions (ppm)")
-axs[1].set_xlabel("Year")
-axs[1].set_ylabel("Cumulative CO2 Increase (ppm)")
-axs[1].legend()
-axs[1].grid()
-
-# Adjust layout and show
-plt.tight_layout()
-plt.show()
