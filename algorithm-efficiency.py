@@ -6,7 +6,7 @@ from scipy.optimize import curve_fit
 # This dataset measures algorithmic efficiency improvements from 2009 to 2023.
 # Raw data comes from the number of unsolved instances on the MATH benchmark (out of 10,000 total).
 # As fewer problems remain unsolved over time, efficiency is inferred to be increasing.
-# Source: Supplementary Section A.3 of the paper.
+# Source: Supplementary Section 2.2 of the paper.
 years = np.array([2009, 2010, 2011, 2012, 2013, 2015, 2017, 2018, 2020, 2022, 2023])
 unsolved = np.array([1655, 1511, 1343, 1265, 1134, 939, 575, 385, 319, 202, 173])
 
