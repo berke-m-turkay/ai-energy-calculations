@@ -3,7 +3,11 @@ import pandas as pd
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
-# Data from 2002 to 2022 for population groups
+# --- Data Section ---
+# Dataset: Population sizes for five demographic groups (A through E), from 2002 to 2022.
+# Each group represents a subset of the global population by IHDI.
+# Units are population.
+# Source: Supplementary Section 3.3.2 of the paper.
 data = {
     "Year": np.arange(2002, 2023),
     "Group_A": [837569360, 842532419, 847614322, 852850479, 858900743, 865577486,
@@ -26,17 +30,24 @@ data = {
                 767555456, 785664280, 804699945, 824491614, 845012629, 865790681, 886835085]
 }
 
-# Convert to DataFrame
+# --- Data Preparation ---
+# Convert the dictionary to a Pandas DataFrame for easy manipulation and plotting.
 df = pd.DataFrame(data)
 
-# Offset the years to start from t=0 for 2022
+# Offset years for modeling: t = 0 corresponds to 2022.
+# This simplifies interpretation of exponential growth parameters.
 df["Year_Offset"] = df["Year"] - 2022
 
-# Define the exponential growth model
+# --- Model Definition ---
+# Define the exponential growth model:
+#   P(t) = P0 * exp(growth_rate * t)
+# Where:
+#   P0 = population at t=0 (i.e., 2022)
+#   growth_rate = annual exponential growth rate
 def exp_growth_model(t, P0, growth_rate):
     return P0 * np.exp(growth_rate * t)
 
-# Define colors for each group
+# Define consistent color mapping for plotting each group
 colors = {
     "Group_A": "blue",
     "Group_B": "green",
@@ -45,38 +56,55 @@ colors = {
     "Group_E": "brown"
 }
 
-# Prepare results dictionary for storing parameters and projections
+# Dictionary to store fitted parameters and projections
 results = {}
 
-# Define the future projection range (30 years from 2022)
+# --- Future Projection Setup ---
+# Define future time span: project population growth from 2022 to 2052 (30 years)
 future_years_offset = np.linspace(0, 30, 1000)
 future_years = future_years_offset + 2022
 
-# Refit the exponential growth model with offset and project future growth
+# --- Model Fitting and Plotting ---
 plt.figure(figsize=(12, 8))
+
+# Iterate over each group to fit, predict, and plot
 for group in ["Group_A", "Group_B", "Group_C", "Group_D", "Group_E"]:
     pop_data = df[group]
-    # Curve fitting
-    params, _ = curve_fit(exp_growth_model, df["Year_Offset"], pop_data, p0=[pop_data.iloc[0], 0.01])
+
+    # Fit exponential model to historical data
+    params, _ = curve_fit(
+        exp_growth_model,
+        df["Year_Offset"],
+        pop_data,
+        p0=[pop_data.iloc[0], 0.01]  # Initial guess: current pop and 1% annual growth
+    )
     P0, growth_rate = params
 
-    # Historical fit
+    # Create a smooth curve for historical data fit
     years_fit_offset = np.linspace(df["Year_Offset"].min(), 0, 1000)
     historical_fit = exp_growth_model(years_fit_offset, P0, growth_rate)
     years_fit = years_fit_offset + 2022
 
-    # Future projection for 2024
+    # Project population for 2024 (Year_Offset = 2)
     pop_2024 = exp_growth_model(2, P0, growth_rate)
+
+    # Generate full 30-year future population projection
     future_projection = exp_growth_model(future_years_offset, P0, growth_rate)
 
-    # Store the results with renamed variables
-    results[group] = {"P0": P0, "pop_growth": growth_rate, "Projected Population (2024)": pop_2024}
+    # Store results in dictionary
+    results[group] = {
+        "P0": P0,
+        "pop_growth": growth_rate,
+        "Projected Population (2024)": pop_2024
+    }
 
-    # Plot historical data, fit, and future projection
+    # --- Plotting ---
+    # Plot historical data, model fit, and future projection
     plt.scatter(df["Year"], pop_data, color=colors[group], label=f"Actual {group}", s=10)
     plt.plot(years_fit, historical_fit, color=colors[group], linestyle="--", label=f"Fitted {group} Trend")
     plt.plot(future_years, future_projection, color=colors[group], linestyle="-", label=f"Future Projection {group}")
 
+# Plot metadata
 plt.title("Population Growth and Future Projection by Group")
 plt.xlabel("Year")
 plt.ylabel("Population")
@@ -84,7 +112,8 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-# Rename results for clarity
+# --- Output ---
+# Rename parameters for clarity when exporting results
 renamed_results = {
     "P0_A": results["Group_A"]["P0"],
     "pop_growth_A": results["Group_A"]["pop_growth"],
@@ -98,6 +127,5 @@ renamed_results = {
     "pop_growth_E": results["Group_E"]["pop_growth"]
 }
 
-# Create DataFrame for renamed results
 renamed_results_df = pd.DataFrame(renamed_results, index=["Values"]).T
 print(renamed_results_df)
